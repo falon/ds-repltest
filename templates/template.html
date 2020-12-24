@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Directory Server Check</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+{% for instance, db in result.items() %}
+   <h2>Instance: {{ instance }}</h2>
+   <div id="container">
+   {% for rootdn, supplier in result[instance].items() %}
+      <a id="content" class="item">
+      <h3>{{ rootdn }}</h3><ul class="supplier">
+	      {% for supplier, value in result[instance][rootdn].items() %}
+	         <li><img src="{{ result[instance][rootdn][supplier]['status'] | selectIcon }}" width="16" height="16"> {{ supplier }}
+	         <ul class="consumer">
+	         {% for consumer, status in result[instance][rootdn][supplier]['replica'].items() %}
+		    <li><img src="{{ status | selectIcon }}" width="16" height="16"> {{ consumer }}</li>
+   	         {% endfor %} 
+		 </ul></li>
+	      {% endfor %}
+      </ul></a>
+   {% endfor %}
+   </div>
+{% endfor %}
+<h4>Test completed on: {{ testdate | datetimefilter }}</h4>
+</body>
+</html>

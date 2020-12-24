@@ -1,0 +1,56 @@
+## ds-repltest config file
+
+Logging:
+  # Must be "syslog" or "file"
+  TYPE: 'syslog'
+  # Syslog Facility
+  SYSLOG_FAC: 'syslog'
+  # Minimum Log Level ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
+  # Suggested: DEBUG or INFO
+  LOG_LEVEL: 'DEBUG'
+  # Syslog socket
+  SYSLOG_SOCKET: '/dev/log'
+  # File dir
+  LOGFILE_DIR: "/var/log/ds-repltest"
+  # File name
+  LOGFILE_NAME: "ds-repltest.log"
+  # Log to stdout too (true/false)
+  # When you run on systemd, set to "false".
+  LOGSTDOUT: true
+
+
+INSTANCES:
+  rupar:
+    'c=en':
+      ldap01.example.com:
+        replica:
+          - ldap02.example.com: null
+          - ldap03.example.com: null
+          - scheduledldap.example.com: cn=ldap 1-->sched1,cn=replica,cn=c\=en,cn=mapping tree,cn=config
+        port: 389
+        protocol: ldap
+        bind: cn=directory manager
+        pwd: password
+      ldap02.example.com:
+        replica:
+          - ldap01.example.com: null
+          - ldap03.example.com: null
+        port: 389
+        protocol: ldap
+        bind: cn=directory manager
+        pwd: password
+
+# Operation Timeout
+TIMEOUT: 10
+# Waiting time after ADD or DELETE to allow replica.
+TIMEWAIT: 10
+# Additional waiting time for replica in "send update now" mode (not always in-synch)
+UPDATE_TIMEWAIT: 120
+
+# Entry for test purpose
+TEST_ENTRY:
+  objectClass:
+    - "groupofuniquenames"
+    - "top"
+  cn: "Elettrogeno"
+  description: "Test Entry created by ds-repltest"
