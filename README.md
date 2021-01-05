@@ -28,6 +28,6 @@ We assume that `bind` and `pwd` are the same for every consumer too.
 
 ## How it works
 For each supplier a TEST_ENTRY will be written on each root dn. After TIMEWAIT ds-repltest check on each consumer if the TEST ENTRY is replicated as well.
-For not always in-synch consumers, ds-repltest forces the update and waits an UPDATE_TIMEWAIT seconds to allow the replica propagation.
+For non always in-synch consumers, ds-repltest forces the update and waits an UPDATE_TIMEWAIT seconds to allow the replica propagation.
 
-Finally ds-repltest open an HTML server where to write a brief test results summary.
+Finally ds-repltest opens an HTML server where to write a brief test results summary.
