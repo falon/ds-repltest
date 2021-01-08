@@ -1,0 +1,13 @@
+/var/log/ds-repltest/ds-repltest.log {
+        create
+        notifempty
+        nomail
+        noolddir
+        missingok
+        daily
+        size 1024M
+        compress
+        create 0644 dsrepl dsrepl
+        su dsrepl dsrepl
+}
+

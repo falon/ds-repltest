@@ -1,0 +1,6 @@
+These are the systemd files to let ds-repltest to work.
+They are installed by RPM. If you install by pip you
+must setup by yourself, if you like.
+
+By default, with systemd the check is repeated every 12 hours.
+Arrange "RuntimeMaxSec" if you want another schedule time.

@@ -1,0 +1,19 @@
+[Unit]
+Description=DS ReplTest Service
+Wants=nss-lookup.target network.target remote-fs.target time-sync.target
+After=var-run.mount nss-lookup.target network.target remote-fs.target time-sync.target
+
+[Service]
+Type=notify
+User=dsrepl
+Group=dsrepl
+MemoryAccounting=true
+MemoryLimit=1M
+KillMode=mixed
+TimeoutStopSec=10s
+ExecStart=/usr/bin/python3 /usr/bin/ds-repltest.py
+Restart=always
+RuntimeMaxSec=12h
+
+[Install]
+WantedBy=multi-user.target
