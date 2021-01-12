@@ -149,6 +149,22 @@ def send_update_now(conn_supplier, consumer_replDN, waitSeconds, instance=None, 
                     .format(instance, baseDN, supplier, consumer, handle_log(err)))
             raise sunError('disable')
         time.sleep(waitSeconds)
+
+
+def time_to_notify(directoryInstances,netTimeout, sleepTime, UPDATE_sleepTime):
+    ''' Calculate a time in order to tell systemd to wait until end of checks '''
+    waiting = 0
+    for instance in directoryInstances:
+        for basedn in directoryInstances[instance]:
+            for supplier in directoryInstances[instance][basedn]:
+                waiting += netTimeout + 2*sleepTime
+                for consumer in directoryInstances[instance][basedn][supplier]['replica']:
+                    waiting += netTimeout
+                    for consumer_host, consumer_repl in consumer.items():
+                        if consumer_repl is not None:
+                            waiting += UPDATE_sleepTime*2
+    return waiting
+
 def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_sleepTime, logger):
     someError = False
     ''' Initialize the RESULT Dictionary '''

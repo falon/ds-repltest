@@ -168,5 +168,7 @@ rm -rf $RPM_BUILD_ROOT
 {% endif %}
 
 %changelog
-* {{ data.changelog_date_packager }} - {{ data.version }}-1
+* Tue Jan 12 2021 Marco F <m.faverof@gmail.com> - 1.0-1
 - Initial package.
+* {{ data.changelog_date_packager }} - {{ data.version }}-1
+- Improved systemd management.

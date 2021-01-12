@@ -90,18 +90,25 @@ for key, value in ENTRY.items():
         ENTRY[key] = value.encode('utf-8')
 
 ''' MAIN procedure '''
+if systemd.daemon.booted():
+    extend_time = myldap.time_to_notify(LDAP_INSTANCES, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME) * 1000000
+    systemd.daemon.notify('EXTEND_TIMEOUT_USEC={}'.format(extend_time))
+    systemd.daemon.notify('STATUS=Please wait. Check on progress...')
+    log.debug('Systemd will wait up to {}s for end of checks.'.format(extend_time/1000000))
+
 (RESULT, testError) = myldap.replTest(LDAP_INSTANCES, rdn, ENTRY, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME, log)
 current_time = datetime.now()
 
 if testError:
     print ("FAIL. Some errors occur. Check at the log for more details.")
+    if systemd.daemon.booted():
+        systemd.daemon.notify('READY=1')
+        systemd.daemon.notify('STATUS=Checks completed with some errors! You can see the results on log or at the web page.')
 else:
     print ("Test completed successfully on {}!".format(current_time.ctime()))
-
-# Notify systemd that the test is done
-if systemd.daemon.booted():
-    systemd.daemon.notify('READY=1')
-    systemd.daemon.notify('STATUS=Test completed. You can see the results on log or at the web page.')
+    if systemd.daemon.booted():
+        systemd.daemon.notify('READY=1')
+        systemd.daemon.notify('STATUS=All checks completed with success! You can see the results on log or at the web page.')
 
 ''' Result presentation with Flask inside the module dsReplTest '''
 app = Flask('dsReplTest')
