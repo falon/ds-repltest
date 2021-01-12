@@ -31,3 +31,26 @@ For each supplier a TEST_ENTRY will be written on each root dn. After TIMEWAIT d
 For non always in-synch consumers, ds-repltest forces the update and waits an UPDATE_TIMEWAIT seconds to allow the replica propagation.
 
 Finally ds-repltest opens an HTML server where to write a brief test results summary.
+
+## INSTALL
+On Centos/RHEL 8 simply create the repo:
+
+```
+curl -1sLf \
+  'https://dl.cloudsmith.io/public/csi/dsrepltest/cfg/setup/bash.rpm.sh' \
+  | sudo -E bash
+```
+
+If you have a modular python, you may have to add
+
+`module_hotfixes=true`
+
+under
+
+`[csi-dsrepltest]` section of `/etc/yum.repos.d/csi-dsrepltest.repo`.
+
+Then run
+
+`dnf install python3-ds-repltest`
+
+Now you can modify your `/etc/ds-repltest/ds-repltest.conf` and run `systemct start ds-repltest.service`

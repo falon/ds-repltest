@@ -1,5 +1,5 @@
 {{ data.credit_line }}
-{% from 'macros.spec' import dependencies, for_python_versions, underscored_or_pypi -%}
+{% from 'macros.spec' import dependencies, for_python_versions, underscored_or_pypi, macroed_url -%}
 %global pypi_name {{ data.name }}
 {%- if data.srcname %}
 %global srcname {{ data.srcname }}
@@ -12,31 +12,33 @@ Summary:        {{ data.summary }}
 
 License:        {{ data.license }}
 URL:            {{ data.home_page }}
-Source0:        {{ data.source0|replace(data.name, '%{pypi_name}')|replace(data.version, '%{version}') }}
+Source0:        {{ data.source0|replace(data.name, '%{pypi_name}')|replace(data.version, '%{version}')|macroed_url }}
 
 {%- if not data.has_extension %}
 BuildArch:      noarch
 {%- endif %}
 {%- for pv in data.sorted_python_versions %}
-{{ dependencies(data.build_deps, False, pv, data.base_python_version, use_with=False) }}
+{{ dependencies(data.build_deps, False, pv, data.base_python_version, False) }}
 {%- endfor %}
 %{?systemd_requires}
 Requires(pre): /usr/sbin/useradd, /usr/bin/getent
 Requires(postun): /usr/sbin/userdel
 
+
 %description
 {{ data.description|truncate(400)|wordwrap }}
 {% for pv in data.sorted_python_versions %}
-%package -n     {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True)}}
-Summary:        {{ data.summary }}
-{{ dependencies(data.runtime_deps, True, pv, pv, use_with=False) }}
-%description -n {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True)}}
+%package -n     {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True) }}
+Summary:        %{summary}
+%{?python_provide:%python_provide {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True)}}}
+{{ dependencies(data.runtime_deps, True, pv, pv) }}
+%description -n {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True) }}
 {{ data.description|truncate(400)|wordwrap }}
 {% endfor -%}
 {%- if data.sphinx_dir %}
-%package -n python-%{pypi_name}-doc
+%package -n {{ data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(None, True) }}-doc
 Summary:        {{ data.name }} documentation
-%description -n python-%{pypi_name}-doc
+%description -n {{ data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(None, True) }}-doc
 Documentation for {{ data.name }}
 {%- endif %}
 
@@ -49,11 +51,11 @@ rm -rf %{pypi_name}.egg-info
 
 %build
 {%- for pv in data.sorted_python_versions %}
-{% if data.has_extension %}CFLAGS="$RPM_OPT_FLAGS" {% endif %}%{__python{{ pv }}} setup.py build
+%py{{ pv }}_build
 {%- endfor %}
 {%- if data.sphinx_dir %}
-# generate html docs 
-PYTHONPATH=${PWD} {{ "sphinx-build"|script_name_for_python_version(data.base_python_version, False, False) }} {{ data.sphinx_dir }} html
+# generate html docs
+PYTHONPATH=${PWD} {{ "sphinx-build"|script_name_for_python_version(data.base_python_version, False, True) }} {{ data.sphinx_dir }} html
 # remove the sphinx-build leftovers
 rm -rf html/.{doctrees,buildinfo}
 {%- endif %}
@@ -67,9 +69,7 @@ rm -rf html/.{doctrees,buildinfo}
 {%- if pv == data.base_python_version and data.python_versions and data.scripts %}
 rm -rf %{buildroot}%{_bindir}/*
 {%- endif %}
-%{__python{{ pv }}} setup.py install --skip-build --root %{buildroot}
-{%- endfor -%}
- 
+%py{{ pv }}_install
 mv %{buildroot}%{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf.dist %{buildroot}%{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf
 install -d -Cm 0755 %{buildroot}%{_unitdir}
 install -Cm 0644 %{buildroot}%{_unitdir}/*.service %{buildroot}%{_unitdir}
@@ -77,26 +77,29 @@ install -d -m 0644 %{buildroot}%{_localstatedir}/log/%{pypi_name}
 install -d -m 0700 %{buildroot}%{_rundir}/%{pypi_name}
 mv %{buildroot}%{_sysconfdir}/logrotate.d/%{pypi_name}.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{pypi_name}
 rm -rf %{buildroot}/%{python3_sitelib}/dsReplTest/etc %{buildroot}/%{python3_sitelib}/dsReplTest/systemd
+{%- endfor -%}
 
-%pre
+{%- for pv in data.sorted_python_versions %}
+%pre -n     {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True) }}
 getent group dsrepl >/dev/null || groupadd -r dsrepl
 getent passwd dsrepl >/dev/null || \
-	useradd -r -g dsrepl -d /run/%{pypi_name} -M -s /sbin/nologin \
-		-c "%{pypi_name}" dsrepl
+        useradd -r -g dsrepl -d /run/%{pypi_name} -M -s /sbin/nologin \
+                -c "%{pypi_name}" dsrepl
 exit 0
 
-%post
+%post -n     {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True) }}
 %systemd_post %{pypi_name}.service
 
-%preun
+%preun -n     {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True) }}
 %systemd_preun %{pypi_name}.service
 
-%postun
+%postun -n     {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True) }}
 %systemd_postun_with_restart %{pypi_name}.service
 if [ "$1" -eq "0" ] ; then
   groupdel dsrepl 2> /dev/null; true
   userdel  dsrepl 2> /dev/null; true
 fi
+{%- endfor %}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -109,18 +112,18 @@ rm -rf $RPM_BUILD_ROOT
 {%- endfor %}
 {%- endif %}
 {% for pv in data.sorted_python_versions %}
-
 %files -n {{ data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True) }}
-{%- if data.doc_files %}
-%doc {{data.doc_files|join(' ') }}
+{%- if data.doc_license %}
+%license %{_datarootdir}/licenses/%{pypi_name}/{{data.doc_license|join(' ')}}
 {%- endif %}
-
+{%- if data.doc_files %}
+%doc %{_docdir}/%{pypi_name}/{{data.doc_files|join(' ') }}
+{%- endif %}
 %config(noreplace) %{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{pypi_name}
 %dir %attr(0644,dsrepl,dsrepl) %{_localstatedir}/log/%{pypi_name}
 %dir %attr(0700,dsrepl,dsrepl) %{_rundir}/%{pypi_name}
 %attr(0644,root,root) %{_unitdir}/*.service
-
 {%- if pv == data.base_python_version %}
 {%- for script in data.scripts %}
 %{_bindir}/{{ script }}
@@ -129,7 +132,6 @@ rm -rf $RPM_BUILD_ROOT
 {%- if data.py_modules %}
 {%- for module in data.py_modules -%}
 {%- if pv == '3' %}
-%dir %{python{{ pv }}_sitelib}/__pycache__/
 %{python{{ pv }}_sitelib}/__pycache__/*
 {%- endif %}
 %{python{{ pv }}_sitelib}/{{ data.name | module_to_path(module) }}.py{% if pv != '3'%}*{% endif %}
@@ -158,9 +160,8 @@ rm -rf $RPM_BUILD_ROOT
 {%- endif %}
 {% endfor %}
 {%- if data.sphinx_dir %}
-
-%files -n python-%{pypi_name}-doc
-%doc html 
+%files -n {{ data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(None, True) }}-doc
+%doc html
 {%- if data.doc_license %}
 %license {{data.doc_license|join(' ')}}
 {%- endif %}
@@ -168,4 +169,4 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * {{ data.changelog_date_packager }} - {{ data.version }}-1
-- Initial release.
+- Initial package.

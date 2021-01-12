@@ -5,14 +5,14 @@ with open("README.md", "r") as fh:
 
 setup(
     name='ds-repltest',
-    version='0.1.post8',
+    version='1.0',
     description='LDAP Replication Check for 389ds',
     long_description=long_description,
     long_description_content_type="text/markdown",
     keywords="389ds rhds directory LDAP check monitor replication",
     packages=['dsReplTest'],
     scripts=['ds-repltest.py'],
-    include_package_data = True,
+    include_package_data = False,
     package_data={
         'dsReplTest': ['etc/ds-repltest.conf.dist',
                        'common.py', 'ldap.py',
@@ -44,7 +44,7 @@ setup(
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.8",
         "Environment :: Web Environment",
         "Framework :: Flask",
         "Topic :: System :: Monitoring",
