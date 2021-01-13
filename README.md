@@ -53,4 +53,31 @@ Then run
 
 `dnf install python3-ds-repltest`
 
-Now you can modify your `/etc/ds-repltest/ds-repltest.conf` and run `systemct start ds-repltest.service`
+Now you can modify your `/etc/ds-repltest/ds-repltest.conf` and run `systemct start ds-repltest.service --no-block
+
+The checks could takes several minutes to perform. During this time the status is
+
+`"Please wait. Check on progress..."`
+
+and at the end you will see:
+
+`"All checks completed with success! You can see the results on log or at the web page."` if there are no errors.
+
+If there are some errors you will see:
+
+`"Checks completed with some errors! You can see the results on log or at the web page."`
+
+Anyway, you can now point to `http://<host>:8080` to see the results with your favourite browser, where `<host>` is the fqdn of the host running **ds-repltet**.
+
+
+
+### Note for EL7
+On systemd version < 236 the `EXTEND_TIMEOUT_USEC` doesn't work, and `RuntimeMaxSec` is unknown.
+You can modify **/usr/lib/systemd/system/ds-repltest.service** in this way:
+```
+#RuntimeMaxSec=12h
+TimeoutStartSec=1200
+```
+You can modify the timeout in order to complete your checks.
+Don't forget `systemctl daemon-reload`.
+
