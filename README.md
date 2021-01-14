@@ -32,6 +32,10 @@ For non always in-synch consumers, ds-repltest forces the update and waits an UP
 
 Finally ds-repltest opens an HTML server where to write a brief test results summary.
 
+By default, on el8 based systemd, the check repeats every 12h (see at `RuntimeMaxSec`) and **ds-repltest** notifies systemd to wait for the end of check through `EXTEND_TIMEOUT_USEC`.
+
+`EXTEND_TIMEOUT_USEC` is evaluated runtime reading at the configuration file.
+
 ## INSTALL
 On Centos/RHEL 8 simply create the repo:
 

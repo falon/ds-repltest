@@ -1,18 +1,19 @@
 {{ data.credit_line }}
 {% from 'macros.spec' import dependencies, for_python_versions, underscored_or_pypi -%}
 %global pypi_name {{ data.name }}
+%global pypi_version {{ data.version }}
 {%- if data.srcname %}
 %global srcname {{ data.srcname }}
 {%- endif %}
 
 Name:           {{ data.pkg_name|macroed_pkg_name(data.srcname) }}
-Version:        {{ data.version }}
+Version:        {{ data.version|rpm_version_410 }}
 Release:        1%{?dist}
 Summary:        {{ data.summary }}
 
 License:        {{ data.license }}
 URL:            {{ data.home_page }}
-Source0:        {{ data.source0|replace(data.name, '%{pypi_name}')|replace(data.version, '%{version}') }}
+Source0:        {{ data.source0|replace(data.name, '%{pypi_name}')|replace(data.version, '%{pypi_version}') }}
 
 {%- if not data.has_extension %}
 BuildArch:      noarch
@@ -20,16 +21,16 @@ BuildArch:      noarch
 {%- for pv in data.sorted_python_versions %}
 {{ dependencies(data.build_deps, False, pv, data.base_python_version, use_with=False) }}
 {%- endfor %}
-%{?systemd_requires}
-Requires(pre): /usr/sbin/useradd, /usr/bin/getent
-Requires(postun): /usr/sbin/userdel
 
 %description
 {{ data.description|truncate(400)|wordwrap }}
 {% for pv in data.sorted_python_versions %}
 %package -n     {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True)}}
 Summary:        {{ data.summary }}
+%{?systemd_requires}
 %{?python_enable_dependency_generator}
+Requires(pre): /usr/sbin/useradd, /usr/bin/getent
+Requires(postun): /usr/sbin/userdel
 %description -n {{data.pkg_name|macroed_pkg_name(data.srcname)|name_for_python_version(pv, True)}}
 {{ data.description|truncate(400)|wordwrap }}
 {% endfor -%}
@@ -41,7 +42,7 @@ Documentation for {{ data.name }}
 {%- endif %}
 
 %prep
-%autosetup -n {{ data.dirname|replace(data.name, '%{pypi_name}')|replace(data.version, '%{version}')|default('%{pypi_name}-%{version}', true) }}
+%autosetup -n {{ data.dirname|replace(data.name, '%{pypi_name}')|replace(data.version, '%{pypi_version}')|default('%{pypi_name}-%{pypi_version}', true) }}
 {%- if data.has_bundled_egg_info %}
 # Remove bundled egg-info
 rm -rf %{pypi_name}.egg-info
@@ -52,7 +53,7 @@ rm -rf %{pypi_name}.egg-info
 {% if data.has_extension %}CFLAGS="$RPM_OPT_FLAGS" {% endif %}%{__python{{ pv }}} setup.py build
 {%- endfor %}
 {%- if data.sphinx_dir %}
-# generate html docs 
+# generate html docs
 PYTHONPATH=${PWD} {{ "sphinx-build"|script_name_for_python_version(data.base_python_version, False, False) }} {{ data.sphinx_dir }} html
 # remove the sphinx-build leftovers
 rm -rf html/.{doctrees,buildinfo}
@@ -142,9 +143,9 @@ rm -rf $RPM_BUILD_ROOT
 {%- endfor %}
 {%- endif %}
 {%- if data.has_pth %}
-%{python{{ pv }}_sitearch}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{version}-py%{python{{ pv }}_version}-*.pth
+%{python{{ pv }}_sitearch}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{pypi_version}-py%{python{{ pv }}_version}-*.pth
 {%- endif %}
-%{python{{ pv }}_sitearch}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{version}-py%{python{{ pv }}_version}.egg-info
+%{python{{ pv }}_sitearch}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{pypi_version}-py%{python{{ pv }}_version}.egg-info
 {%- else %}
 {%- if data.has_packages %}
 {%- for package in data.packages %}
@@ -152,20 +153,20 @@ rm -rf $RPM_BUILD_ROOT
 {%- endfor %}
 {%- endif %}
 {%- if data.has_pth %}
-%{python{{ pv }}_sitelib}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{version}-py%{python{{ pv }}_version}-*.pth
+%{python{{ pv }}_sitelib}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{pypi_version}-py%{python{{ pv }}_version}-*.pth
 {%- endif %}
-%{python{{ pv }}_sitelib}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{version}-py%{python{{ pv }}_version}.egg-info
+%{python{{ pv }}_sitelib}/{{ underscored_or_pypi(data.name, data.underscored_name) }}-%{pypi_version}-py%{python{{ pv }}_version}.egg-info
 {%- endif %}
 {% endfor %}
 {%- if data.sphinx_dir %}
 %files -n python-%{pypi_name}-doc
-%doc html 
+%doc html
 {%- if data.doc_license %}
 %license {{data.doc_license|join(' ')}}
 {%- endif %}
 {% endif %}
 %changelog
-* {{ data.changelog_date_packager }} - {{ data.version }}-1
-- Initial package.
+* {{ data.changelog_date_packager }} - {{ data.version|rpm_version_410(False) }}-1
+- Improved systemd management.
 * Tue Jan 12 2021 Marco F <m.faverof@gmail.com> - 1.0-1
 - Initial package.
