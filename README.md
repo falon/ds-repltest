@@ -57,7 +57,7 @@ Then run
 
 `dnf install python3-ds-repltest`
 
-Now you can modify your `/etc/ds-repltest/ds-repltest.conf` and run `systemct start ds-repltest.service --no-block
+Now you can modify your `/etc/ds-repltest/ds-repltest.conf` and run `systemct start ds-repltest.service --no-block`
 
 The checks could takes several minutes to perform. During this time the status is
 
