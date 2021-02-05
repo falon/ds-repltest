@@ -70,7 +70,7 @@ rm -rf html/.{doctrees,buildinfo}
 rm -rf %{buildroot}%{_bindir}/*
 {%- endif %}
 %py{{ pv }}_install
-mv %{buildroot}%{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf.dist %{buildroot}%{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf
+mv %{buildroot}%{_sysconfdir}/%{pypi_name}/%{pypi_name}.yaml.dist %{buildroot}%{_sysconfdir}/%{pypi_name}/%{pypi_name}.yaml
 install -d -Cm 0755 %{buildroot}%{_unitdir}
 install -Cm 0644 %{buildroot}%{_unitdir}/*.service %{buildroot}%{_unitdir}
 install -d -m 0644 %{buildroot}%{_localstatedir}/log/%{pypi_name}
@@ -119,7 +119,7 @@ rm -rf $RPM_BUILD_ROOT
 {%- if data.doc_files %}
 %doc %{_docdir}/%{pypi_name}/{{data.doc_files|join(' ') }}
 {%- endif %}
-%config(noreplace) %{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf
+%config(noreplace) %{_sysconfdir}/%{pypi_name}/%{pypi_name}.yaml
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{pypi_name}
 %dir %attr(0644,dsrepl,dsrepl) %{_localstatedir}/log/%{pypi_name}
 %dir %attr(0700,dsrepl,dsrepl) %{_rundir}/%{pypi_name}

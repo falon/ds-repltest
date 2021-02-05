@@ -16,17 +16,17 @@ import dsReplTest.common as setting
 Read Config
 '''
 # get the config from FHS conform dir
-CONFIG = os.path.join(os.path.dirname("/etc/ds-repltest/"), "ds-repltest.conf")
+CONFIG = os.path.join(os.path.dirname("/etc/ds-repltest/"), "ds-repltest.yaml")
 if not os.path.isfile(CONFIG):
     # developing stage
-    CONFIG = os.path.join(os.path.dirname(myldap.__file__), "etc/ds-repltest.conf")
+    CONFIG = os.path.join(os.path.dirname(myldap.__file__), "etc/ds-repltest.yaml")
 
 if not os.path.isfile(CONFIG):
     # Try to copy dist file in first config file
-    distconf = os.path.join(os.path.dirname(CONFIG), "ds-repltest.conf.dist")
+    distconf = os.path.join(os.path.dirname(CONFIG), "ds-repltest.yaml.dist")
     if os.path.isfile(distconf):
-        print("First run? I don't find <ds-repltest.conf>, but <ds-repltest.conf.dist> exists. I try to rename it.")
-        os.rename(distconf, os.path.join(os.path.dirname(distconf), "ds-repltest.conf"))
+        print("First run? I don't find <ds-repltest.yaml>, but <ds-repltest.yaml.dist> exists. I try to rename it.")
+        os.rename(distconf, os.path.join(os.path.dirname(distconf), "ds-repltest.yaml"))
 
 # get the configuration items
 if os.path.isfile(CONFIG):
@@ -45,7 +45,7 @@ if os.path.isfile(CONFIG):
     SLEEPTIME = setting.load_yaml(CONFIG, "TIMEWAIT")
     UPDATE_SLEEPTIME = setting.load_yaml(CONFIG, "UPDATE_TIMEWAIT")
 else:
-    sys.exit("Please check the config file! Config path: %s.\nHint: put a ds-repltest.conf in /etc/ds-repltest/ path." % CONFIG)
+    sys.exit("Please check the config file! Config path: %s.\nHint: put a ds-repltest.yaml in /etc/ds-repltest/ path." % CONFIG)
 # =============================================================================
 
 # check if all config parameters are present

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='ds-repltest',
-    version='1.1',
+    version='1.2',
     description='LDAP Replication Check for 389ds',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -14,12 +14,12 @@ setup(
     scripts=['ds-repltest.py'],
     include_package_data = False,
     package_data={
-        'dsReplTest': ['etc/ds-repltest.conf.dist',
+        'dsReplTest': ['etc/ds-repltest.yaml.dist',
                        'common.py', 'ldap.py',
                        'static/*', 'templates/*' ],
     },
     data_files=[
-        ('/etc/ds-repltest', ['dsReplTest/etc/ds-repltest.conf.dist']),
+        ('/etc/ds-repltest', ['dsReplTest/etc/ds-repltest.yaml.dist']),
         ('/usr/share/doc/ds-repltest', ['README.md']),
         ('/usr/share/licenses/ds-repltest', ['LICENSE']),
         ('/usr/lib/systemd/system', ['dsReplTest/systemd/ds-repltest.service']),
