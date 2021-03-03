@@ -57,7 +57,7 @@ Then run
 
 `dnf install python3-ds-repltest`
 
-Now you can modify your `/etc/ds-repltest/ds-repltest.conf` and run `systemct start ds-repltest.service --no-block`
+Now you can modify your `/etc/ds-repltest/ds-repltest.yaml` and run `systemct start ds-repltest.service --no-block`
 
 The checks could takes several minutes to perform. During this time the status is
 
@@ -85,3 +85,15 @@ TimeoutStartSec=1200
 You can modify the timeout in order to complete your checks.
 Don't forget `systemctl daemon-reload`.
 
+## OPTIONAL ARGUMENTS
+### --once
+Alternatively to systemd, the check could run once by command line and then exit. Run the command in this way:_
+
+    ds-repltest.py --once
+
+In this mode ds-repltest run the checks and exit without open a permanent webserver. The exit status is 0 only if no errors occur.
+
+### -c <alt config file>
+You can specify an alternative config file in place of `ds-repltest.yaml`. Add the optional argument `-c <config file name>`.
+
+Put your config file in the `/etc/ds-repltest` path.

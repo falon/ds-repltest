@@ -6,27 +6,57 @@ import time
 import sys
 import systemd.daemon
 import ldap
+import getopt
 from flask import Flask, render_template, url_for
 from datetime import datetime
 import dsReplTest.ldap as myldap
 import dsReplTest.common as setting
 
 
+# Manage argv
+argv = sys.argv[1:]
+config_file = 'ds-repltest.yaml'
+runOnce = False
+usage = 'Usage: {} [-c <alt config file>][--once][--help]'.format(sys.argv[0])
+try:
+    opts, args = getopt.getopt(argv,"c:",["once","help"])
+except getopt.GetoptError:
+    print (usage)
+    sys.exit(2)
+for opt, arg in opts:
+    if opt == '-c':
+        config_file = arg
+    elif opt == '--once':
+        runOnce = True
+    elif opt == '--help':
+        print (usage)
+        sys.exit(0)
+    else:
+        print (usage)
+        sys.exit(2)
+
+if args:
+    print('Unhadled arguments!')
+    print (usage)
+    sys.exit(2)
+
 '''
 Read Config
 '''
 # get the config from FHS conform dir
-CONFIG = os.path.join(os.path.dirname("/etc/ds-repltest/"), "ds-repltest.yaml")
+config_path = "/etc/ds-repltest/"
+CONFIG = os.path.join(os.path.dirname(config_path), config_file)
 if not os.path.isfile(CONFIG):
     # developing stage
-    CONFIG = os.path.join(os.path.dirname(myldap.__file__), "etc/ds-repltest.yaml")
+    config_path ="etc/"
+    CONFIG = os.path.join(os.path.dirname(myldap.__file__), "{}{}".format(config_path, config_file))
 
 if not os.path.isfile(CONFIG):
     # Try to copy dist file in first config file
-    distconf = os.path.join(os.path.dirname(CONFIG), "ds-repltest.yaml.dist")
+    distconf = os.path.join(os.path.dirname(CONFIG), "{}.dist".format(config_file))
     if os.path.isfile(distconf):
-        print("First run? I don't find <ds-repltest.yaml>, but <ds-repltest.yaml.dist> exists. I try to rename it.")
-        os.rename(distconf, os.path.join(os.path.dirname(distconf), "ds-repltest.yaml"))
+        print("First run? I don't find <{}>, but <{}.dist> exists. I try to rename it.".format(config_file, config_file))
+        os.rename(distconf, os.path.join(os.path.dirname(distconf), config_file))
 
 # get the configuration items
 if os.path.isfile(CONFIG):
@@ -45,7 +75,7 @@ if os.path.isfile(CONFIG):
     SLEEPTIME = setting.load_yaml(CONFIG, "TIMEWAIT")
     UPDATE_SLEEPTIME = setting.load_yaml(CONFIG, "UPDATE_TIMEWAIT")
 else:
-    sys.exit("Please check the config file! Config path: %s.\nHint: put a ds-repltest.yaml in /etc/ds-repltest/ path." % CONFIG)
+    sys.exit("Please check the config file! Config path: {}.\nHint: put a '{}' file in {} path.".format(CONFIG, config_file, config_path))
 # =============================================================================
 
 # check if all config parameters are present
@@ -90,6 +120,16 @@ for key, value in ENTRY.items():
         ENTRY[key] = value.encode('utf-8')
 
 ''' MAIN procedure '''
+if runOnce:
+    (RESULT, testError) = myldap.replTest(LDAP_INSTANCES, rdn, ENTRY, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME, log)
+    if testError:
+        print ("FAIL. Some errors occur. Check at the log for more details.")
+        sys.exit(255)
+    else:
+        print ("Test completed successfully!")
+        sys.exit(0)
+
+# Run in systemd
 if systemd.daemon.booted():
     extend_time = myldap.time_to_notify(LDAP_INSTANCES, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME) * 1000000
     systemd.daemon.notify('EXTEND_TIMEOUT_USEC={}'.format(extend_time))

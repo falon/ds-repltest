@@ -167,6 +167,9 @@ rm -rf $RPM_BUILD_ROOT
 {% endif %}
 %changelog
 * {{ data.changelog_date_packager }} - {{ data.version|rpm_version_410(False) }}-1
+- New -c option to choose an alternative config file.
+- New --once option to run the checks once and then exit.
+* Fri Feb 05 2021 Marco F <m.faverof@gmail.com> - 1.2-1
 - Renamed config file extension from conf to yaml.
 * Thu Jan 14 2021 Marco F <m.faverof@gmail.com> - 1.1-1
 - Improved systemd management.
