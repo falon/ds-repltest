@@ -167,6 +167,8 @@ rm -rf $RPM_BUILD_ROOT
 {% endif %}
 %changelog
 * {{ data.changelog_date_packager }} - {{ data.version|rpm_version_410(False) }}-1
+- Reclassified a syslog message to error.
+* Wed Mar 03 2021 Marco F <m.faverof@gmail.com> - 1.3-1
 - New -c option to choose an alternative config file.
 - New --once option to run the checks once and then exit.
 * Fri Feb 05 2021 Marco F <m.faverof@gmail.com> - 1.2-1
