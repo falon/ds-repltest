@@ -295,7 +295,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                                      .format(instance, basedn, supplier, consumer_host))
                             RESULT[instance][basedn][supplier]['replica'][consumer_host] = True
                         else:
-                            logger.info('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=fail detail="{} entries found. Expected 1"'
+                            logger.error('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=fail detail="{} entries found. Expected 1"'
                                      .format(instance, basedn, supplier, consumer_host, nentries))
                             RESULT[instance][basedn][supplier]['replica'][consumer_host] = False
                             someError = True
