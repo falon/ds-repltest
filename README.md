@@ -87,11 +87,11 @@ Don't forget `systemctl daemon-reload`.
 
 ## OPTIONAL ARGUMENTS
 ### --once
-Alternatively to systemd, the check could run once by command line and then exit. Run the command in this way:_
+Alternatively to systemd, the check could run once by command line and then exit. Run the command in this way:
 
     ds-repltest.py --once
 
-In this mode ds-repltest run the checks and exit without open a permanent webserver. The exit status is 0 only if no errors occur.
+In this mode ds-repltest run the checks and exits without open a permanent webserver. The exit status is 0 only if no errors occur.
 
 ### -c <alt config file>
 You can specify an alternative config file in place of `ds-repltest.yaml`. Add the optional argument `-c <config file name>`.
