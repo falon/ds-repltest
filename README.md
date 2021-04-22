@@ -26,6 +26,8 @@ For every supplier we provide the following keys:
 
 We assume that `bind` and `pwd` are the same for every consumer too.
 
+If at least an error occurs, you can send a short email message. See at  the `Email` section of the config file.
+
 ## How it works
 For each supplier a TEST_ENTRY will be written on each root dn. After TIMEWAIT ds-repltest check on each consumer if the TEST ENTRY is replicated as well.
 For non always in-synch consumers, ds-repltest forces the update and waits an UPDATE_TIMEWAIT seconds to allow the replica propagation.
@@ -72,6 +74,8 @@ If there are some errors you will see:
 `"Checks completed with some errors! You can see the results on log or at the web page."`
 
 Anyway, you can now point to `http://<host>:8080` to see the results with your favourite browser, where `<host>` is the fqdn of the host running **ds-repltet**.
+
+You can customize the host and port where listen to through the `Web` config var.
 
 
 

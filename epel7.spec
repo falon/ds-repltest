@@ -9,6 +9,8 @@
 Name:           {{ data.pkg_name|macroed_pkg_name(data.srcname) }}
 Version:        {{ data.version|rpm_version_410 }}
 Release:        1%{?dist}
+Vendor:		Falon Entertainment
+Packager:	Marco Favero <marco.favero@csi.it>
 Summary:        {{ data.summary }}
 
 License:        {{ data.license }}
@@ -167,6 +169,8 @@ rm -rf $RPM_BUILD_ROOT
 {% endif %}
 %changelog
 * {{ data.changelog_date_packager }} - {{ data.version|rpm_version_410(False) }}-1
+- Now you cand send a short mail if the check fails.
+* Wed Mar 03 2021 Marco F <m.faverof@gmail.com> - 1.3-2
 - Reclassified a syslog message to error.
 * Wed Mar 03 2021 Marco F <m.faverof@gmail.com> - 1.3-1
 - New -c option to choose an alternative config file.

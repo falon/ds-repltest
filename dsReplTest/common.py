@@ -2,6 +2,10 @@ import yaml
 import logging
 import logging.handlers
 import sys
+import smtplib
+import ssl
+from email.message import EmailMessage
+from email import utils
 
 loggerName = 'ds-repltest'
 
@@ -37,3 +41,36 @@ def set_log(handler_type, socket, facility, level='INFO', stdout=False, filepath
         handler_out.setFormatter(formatter_stdout)
         log.addHandler(handler_out)
     return True
+def notifyEmail(mailConf):
+    msg = EmailMessage()
+    msg.set_content(mailConf['BODYTEXT'])
+    msg.set_default_type('text/plain')
+    msg['Subject'] = 'Some errors occur checking the replica'
+    msg['From'] = mailConf['FROM']
+    msg['To'] = ', '.join(mailConf['TO'])
+    msg['Date'] = utils.formatdate(localtime = 1)
+    msg['Message-ID'] = utils.make_msgid()
+
+    # Send email
+    ret = False
+    err = None
+    with smtplib.SMTP(mailConf['SERVER'], mailConf['PORT']) as s:
+        try:
+            s.ehlo()
+            if mailConf['STARTTLS']:
+                context = ssl.create_default_context()
+                s.starttls(context=context)
+            s.ehlo()
+            s.login(mailConf['USER'], mailConf['PWD'])
+            s.send_message(msg)
+            ret = True
+        except smtplib.SMTPRecipientsRefused as exc:
+            err = 'Recipient refused: {}'.format(exc)
+        except smtplib.SMTPAuthenticationError as exc:
+            err = 'Authentication fails: {}'.format(exc)
+        except smtplib.SMTPSenderRefused as exc:
+            err = 'Sender refused: {}'.format(exc)
+        except smtplib.SMTPException as exc:
+            err = exc
+        s.quit()
+    return ret, err

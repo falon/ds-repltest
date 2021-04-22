@@ -69,6 +69,8 @@ if os.path.isfile(CONFIG):
     SYSLOG_LEVEL = logging_parameters['LOG_LEVEL']
     SYSLOG_SOCKET = logging_parameters['SYSLOG_SOCKET']
 
+    email_parameters = setting.load_yaml(CONFIG, "Email")
+    web_parameters = setting.load_yaml(CONFIG, "Web")
     LDAP_INSTANCES = setting.load_yaml(CONFIG, "INSTANCES")
     ENTRY = setting.load_yaml(CONFIG, "TEST_ENTRY")
     NET_TIMEOUT = setting.load_yaml(CONFIG, "TIMEOUT")
@@ -124,6 +126,11 @@ if runOnce:
     (RESULT, testError) = myldap.replTest(LDAP_INSTANCES, rdn, ENTRY, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME, log)
     if testError:
         print ("FAIL. Some errors occur. Check at the log for more details.")
+        if email_parameters['SEND']:
+            log.info('Sending mail to notify errors')
+            (emailSent, emailErr) = setting.notifyEmail(email_parameters)
+            if not emailSent:
+                log.error('Unable to send email: {}'.format(emailErr))
         sys.exit(255)
     else:
         print ("Test completed successfully!")
@@ -141,6 +148,11 @@ current_time = datetime.now()
 
 if testError:
     print ("FAIL. Some errors occur. Check at the log for more details.")
+    if email_parameters['SEND']:
+        log.info('Sending mail to notify errors')
+        (emailSent, emailErr) = setting.notifyEmail(email_parameters)
+        if not emailSent:
+            log.error('Unable to send email: {}'.format(emailErr))
     if systemd.daemon.booted():
         systemd.daemon.notify('READY=1')
         systemd.daemon.notify('STATUS=Checks completed with some errors! You can see the results on log or at the web page.')
@@ -175,7 +187,10 @@ def index():
 
 if __name__ == "__main__":
     from waitress import serve
-    serve(app, host="0.0.0.0", port=8080)
+    try:
+        serve(app, host=web_parameters['HOST'], port=web_parameters['PORT'])
+    except Exception as exc:
+        log.error('Unable to start the webserver: {}'.format(exc))
 
 if systemd.daemon.booted():
     systemd.daemon.notify('STOPPING=1')
