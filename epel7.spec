@@ -7,8 +7,8 @@
 {%- endif %}
 
 Name:           {{ data.pkg_name|macroed_pkg_name(data.srcname) }}
-Version:        {{ data.version|rpm_version_410 }}
-Release:        1%{?dist}
+Version:        {{ data.version }}
+Release:        2%{?dist}
 Vendor:		Falon Entertainment
 Packager:	Marco Favero <marco.favero@csi.it>
 Summary:        {{ data.summary }}
@@ -168,7 +168,9 @@ rm -rf $RPM_BUILD_ROOT
 {%- endif %}
 {% endif %}
 %changelog
-* {{ data.changelog_date_packager }} - {{ data.version|rpm_version_410(False) }}-1
+* {{ data.changelog_date_packager }} - {{ data.version }}-2
+- Added network-online.target in systemd requirements.
+* Thu Apr 22 2021 Marco F <m.faverof@gmail.com> - 1.4-1
 - Now you cand send a short mail if the check fails.
 * Wed Mar 03 2021 Marco F <m.faverof@gmail.com> - 1.3-2
 - Reclassified a syslog message to error.
