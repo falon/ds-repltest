@@ -174,7 +174,10 @@ def datetimefilter(value, format='%d/%m/%Y at %H:%M:%S'):
 app.jinja_env.filters['datetimefilter'] = datetimefilter
 
 def selectIcon(selector):
-    ''' Select the right icon taken from https://freeiconshop.com/icon/ '''
+    ''' Select the right icon taken from https://freeiconshop.com/icon/
+        and https://icons-for-free.com/ '''
+    if selector is None:
+        return url_for('static', filename='undef.png')
     if selector:
         return url_for('static', filename='yes.png')
     else:

@@ -8,7 +8,7 @@
 
 Name:           {{ data.pkg_name|macroed_pkg_name(data.srcname) }}
 Version:        {{ data.version }}
-Release:        2%{?dist}
+Release:        1%{?dist}
 Vendor:		Falon Entertainment
 Packager:	Marco Favero <marco.favero@csi.it>
 Summary:        {{ data.summary }}
@@ -168,7 +168,11 @@ rm -rf $RPM_BUILD_ROOT
 {%- endif %}
 {% endif %}
 %changelog
-* {{ data.changelog_date_packager }} - {{ data.version }}-2
+* {{ data.changelog_date_packager }} - {{ data.version }}-1
+- Version 1.5
+- Added balancer section to test LDAP availability
+  on a host per instance.
+* Wed May 19 2021 Marco F <m.faverof@gmail.com> - 1.4-2
 - Added network-online.target in systemd requirements.
 * Thu Apr 22 2021 Marco F <m.faverof@gmail.com> - 1.4-1
 - Now you cand send a short mail if the check fails.

@@ -17,7 +17,7 @@ You can see at your replication agreements to discover your topology. At the mom
 Every instance has one or more **root DN**, corresponding to a database on the Directory Server.
 For every root DN you have to specify one or more supplier hosts.
 
-For every supplier we provide the following keys:
+For every suffix supplier we provide the following keys:
 - port: the LDAP port.
 - protocol: interface to ldap server (at the moment only 'ldap' is supported).
 - bind: the bind DN with write access to the rootDN.
@@ -27,6 +27,8 @@ For every supplier we provide the following keys:
 We assume that `bind` and `pwd` are the same for every consumer too.
 
 If at least an error occurs, you can send a short email message. See at  the `Email` section of the config file.
+
+An optional `balancer` section could be added for every instance. You can provide an access configuration in order to test the availability of LDAP over a single host. This host is tipically a balancer.
 
 ## How it works
 For each supplier a TEST_ENTRY will be written on each root dn. After TIMEWAIT ds-repltest check on each consumer if the TEST ENTRY is replicated as well.
@@ -101,3 +103,22 @@ In this mode ds-repltest run the checks and exits without open a permanent webse
 You can specify an alternative config file in place of `ds-repltest.yaml`. Add the optional argument `-c <config file name>`.
 
 Put your config file in the `/etc/ds-repltest` path.
+
+## Upgrade to version 1.5
+A key `suffixes` must be prepended to your conf before the supplier list. For instance, a resulting working config is:
+
+```
+    suffixes:
+      'c=en':
+        ldap01.example.com:
+          replica:
+            - ldap02.example.com: null
+            - ldap03.example.com: null
+            - scheduledldap.example.com: cn=ldap 1-->sched1,cn=replica,cn=c\=en,cn=mapping tree,cn=config
+          port: 389
+          protocol: ldap
+          bind: cn=directory manager
+          pwd: password
+```
+
+See at the default config for more details.

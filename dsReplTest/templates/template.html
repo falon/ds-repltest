@@ -7,15 +7,15 @@
 <body>
 
 {% for instance, db in result.items() %}
-   <h2>Instance: {{ instance }}</h2>
+   <h2>Instance: {{ instance }} <img src="{{ result[instance]['status'] | selectIcon }}" width="16" height="16"></h2>
    <div id="container">
-   {% for rootdn, supplier in result[instance].items() %}
+   {% for rootdn, supplier in result[instance]['suffixes'].items() %}
       <a id="content" class="item">
       <h3>{{ rootdn }}</h3><ul class="supplier">
-	      {% for supplier, value in result[instance][rootdn].items() %}
-	         <li><img src="{{ result[instance][rootdn][supplier]['status'] | selectIcon }}" width="16" height="16"> {{ supplier }}
+	      {% for supplier, value in result[instance]['suffixes'][rootdn].items() %}
+	         <li><img src="{{ result[instance]['suffixes'][rootdn][supplier]['status'] | selectIcon }}" width="16" height="16"> {{ supplier }}
 	         <ul class="consumer">
-	         {% for consumer, status in result[instance][rootdn][supplier]['replica'].items() %}
+	         {% for consumer, status in result[instance]['suffixes'][rootdn][supplier]['replica'].items() %}
 		    <li><img src="{{ status | selectIcon }}" width="16" height="16"> {{ consumer }}</li>
    	         {% endfor %} 
 		 </ul></li>

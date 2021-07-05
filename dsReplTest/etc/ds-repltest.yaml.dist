@@ -47,24 +47,32 @@ Web:
 
 INSTANCES:
   rupar:
-    'c=en':
-      ldap01.example.com:
-        replica:
-          - ldap02.example.com: null
-          - ldap03.example.com: null
-          - scheduledldap.example.com: cn=ldap 1-->sched1,cn=replica,cn=c\=en,cn=mapping tree,cn=config
-        port: 389
-        protocol: ldap
-        bind: cn=directory manager
-        pwd: password
-      ldap02.example.com:
-        replica:
-          - ldap01.example.com: null
-          - ldap03.example.com: null
-        port: 389
-        protocol: ldap
-        bind: cn=directory manager
-        pwd: password
+    balancer:
+      protocol: ldap
+      host: balancer.ldap.com
+      port: 389
+      basedn: c=en
+      bind: cn=directory manager
+      pwd: password
+    suffixes:
+      'c=en':
+        ldap01.example.com:
+          replica:
+            - ldap02.example.com: null
+            - ldap03.example.com: null
+            - scheduledldap.example.com: cn=ldap 1-->sched1,cn=replica,cn=c\=en,cn=mapping tree,cn=config
+          port: 389
+          protocol: ldap
+          bind: cn=directory manager
+          pwd: password
+        ldap02.example.com:
+          replica:
+            - ldap01.example.com: null
+            - ldap03.example.com: null
+          port: 389
+          protocol: ldap
+          bind: cn=directory manager
+          pwd: password
 
 # Operation Timeout
 TIMEOUT: 10

@@ -155,10 +155,10 @@ def time_to_notify(directoryInstances,netTimeout, sleepTime, UPDATE_sleepTime):
     ''' Calculate a time in order to tell systemd to wait until end of checks '''
     waiting = 0
     for instance in directoryInstances:
-        for basedn in directoryInstances[instance]:
-            for supplier in directoryInstances[instance][basedn]:
+        for basedn in directoryInstances[instance]['suffixes']:
+            for supplier in directoryInstances[instance]['suffixes'][basedn]:
                 waiting += netTimeout + 2*sleepTime
-                for consumer in directoryInstances[instance][basedn][supplier]['replica']:
+                for consumer in directoryInstances[instance]['suffixes'][basedn][supplier]['replica']:
                     waiting += netTimeout
                     for consumer_host, consumer_repl in consumer.items():
                         if consumer_repl is not None:
@@ -172,27 +172,93 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
 
     for instance in directoryInstances:
         RESULT[instance] = {}
+        RESULT[instance]['suffixes'] = {}
+        RESULT[instance]['status'] = None
         print (instance)
-        for basedn in directoryInstances[instance]:
+        # Check balancer, if any
+        if 'balancer' in directoryInstances[instance].keys() and directoryInstances[instance]['balancer'] is not None:
+            balancer_uri = "{}://{}:{}".format(directoryInstances[instance]['balancer']['protocol'],
+                                               directoryInstances[instance]['balancer']['host'],
+                                               directoryInstances[instance]['balancer']['port'])
+            print("\t\tChecking balancer access on {}".format(balancer_uri))
+            try:
+                connB = connect(balancer_uri,
+                                directoryInstances[instance]['balancer']['bind'],
+                                directoryInstances[instance]['balancer']['pwd'], netTimeout, logger)
+                logger.info('instance="{}" baseDN="{}" balancer="{}" action=connect status=success'.format(
+                    instance,
+                    directoryInstances[instance]['balancer']['basedn'],
+                    directoryInstances[instance]['balancer']['host']))
+            except ldap.LDAPError as err:
+                    logger.error('instance="{}" baseDN="{}" balancer="{}" action=connect status=fail {}'
+                                 .format(instance, directoryInstances[instance]['balancer']['basedn'],
+                                         directoryInstances[instance]['balancer']['host'], handle_log(err)))
+                    RESULT[instance]['status'] = False
+                    someError = True
+                    connB = False
+            except:
+                print("\n\n Unhandled exception!! \n\n")
+                logger.fatal('instance="{}" baseDN="{}" balancer="{}" action=connect status=fail error="unhandled exception"'
+                             .format(instance, directoryInstances[instance]['balancer']['basedn'],
+                                     directoryInstances[instance]['balancer']['host']))
+                raise
+            if connB:
+                try:
+                    nentries = search(connB, directoryInstances[instance]['balancer']['basedn'], ldap.SCOPE_BASE, 'objectclass=*')
+                    logger.info('instance="{}" baseDN="{}" balancer={} action="balancer search" status=success detail="{} entries found"'
+                                .format(instance, directoryInstances[instance]['balancer']['basedn'],
+                                        directoryInstances[instance]['balancer']['host'], nentries))
+                    if nentries == 1:
+                        logger.info('instance="{}" baseDN="{}" balancer={} action=validate status=success'.format(
+                            instance, directoryInstances[instance]['balancer']['basedn'],
+                            directoryInstances[instance]['balancer']['host']))
+                        RESULT[instance]['status'] = True
+                    else:
+                        logger.error('instance="{}" baseDN="{}" balancer={} action=validate status=fail detail="{}"'.format(
+                            instance, directoryInstances[instance]['balancer']['basedn'],
+                            directoryInstances[instance]['balancer']['host'],
+                            'wrong number of entries found'))
+                        RESULT[instance]['status'] = False
+                        someError = True
+                except ldap.LDAPError as err:
+                    nentries = 0
+                    someError = True
+                    logger.error('instance="{}" baseDN="{}" balancer={} action="balancer search" status=fail {}'
+                                 .format(instance, directoryInstances[instance]['balancer']['basedn'],
+                                         directoryInstances[instance]['balancer']['host'], handle_log(err)))
+                    RESULT[instance]['status'] = False
+                try:
+                    connB.unbind_s()
+                    logger.info('instance="{}" baseDN="{}" balencer={} action=disconnect status=success'
+                                .format(instance, directoryInstances[instance]['balancer']['basedn'],
+                                        directoryInstances[instance]['balancer']['host']))
+                except:
+                    logger.error('instance="{}" baseDN="{}" balancer={} action=disconnect status=fail'
+                                .format(instance, directoryInstances[instance]['balancer']['basedn'],
+                                        directoryInstances[instance]['balancer']['host']))
+                    someError = True
+
+        # Perform the replication checks
+        for basedn in directoryInstances[instance]['suffixes']:
             print("\t{}".format(basedn))
             entryDN = "{}={},{}".format(rDN, testEntry[rDN].decode('utf-8'), basedn)
-            RESULT[instance][basedn] = {}
-            for supplier in directoryInstances[instance][basedn]:
-                RESULT[instance][basedn][supplier] = {}
-                RESULT[instance][basedn][supplier]['replica'] = {}
+            RESULT[instance]['suffixes'][basedn] = {}
+            for supplier in directoryInstances[instance]['suffixes'][basedn]:
+                RESULT[instance]['suffixes'][basedn][supplier] = {}
+                RESULT[instance]['suffixes'][basedn][supplier]['replica'] = {}
                 # Connect to the Supplier
                 print("\t\tWorking on supplier {}".format(supplier))
-                supplier_uri = "{}://{}:{}".format(directoryInstances[instance][basedn][supplier]['protocol'], supplier,
-                                                   directoryInstances[instance][basedn][supplier]['port'])
+                supplier_uri = "{}://{}:{}".format(directoryInstances[instance]['suffixes'][basedn][supplier]['protocol'], supplier,
+                                                   directoryInstances[instance]['suffixes'][basedn][supplier]['port'])
                 try:
                     connS = connect(supplier_uri,
-                                    directoryInstances[instance][basedn][supplier]['bind'],
-                                    directoryInstances[instance][basedn][supplier]['pwd'], netTimeout, logger)
+                                    directoryInstances[instance]['suffixes'][basedn][supplier]['bind'],
+                                    directoryInstances[instance]['suffixes'][basedn][supplier]['pwd'], netTimeout, logger)
                     logger.info('instance="{}" baseDN="{}" host={} action=connect status=success'.format(instance, basedn, supplier))
                 except ldap.LDAPError as err:
                     logger.error('instance="{}" baseDN="{}" host={} action=connect status=fail {}'
                               .format(instance, basedn, supplier, handle_log(err)))
-                    RESULT[instance][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
                     someError = True
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't connect"))
@@ -240,36 +306,36 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                               .format(instance, basedn, supplier, handle_log(err)))
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't add to the supplier"))
-                    RESULT[instance][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
                     someError= True
 
                 # Wait to allow replica propagation among consumers
                 time.sleep(sleepTime)
                 # Check the testEntry replica on Consumers
-                for consumer in directoryInstances[instance][basedn][supplier]['replica']:
+                for consumer in directoryInstances[instance]['suffixes'][basedn][supplier]['replica']:
                     for consumer_host, consumer_repl in consumer.items():
                         # "send update now" for non-always in synch replica
                         try:
                             send_update_now(connS, consumer_repl, UPDATE_sleepTime, instance, basedn, supplier, consumer_host, logger)
                         except sunError as err:
-                            RESULT[instance][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
                             someError= True
                             logger.fatal('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=fail {}'
                                     .format(instance, basedn, supplier, consumer_host, handle_log(err)))
                             continue
                         # Check if the replica has completed as well
                         #  Connect on consumer
-                        consumer_uri = "{}://{}:{}".format(directoryInstances[instance][basedn][supplier]['protocol'], consumer_host,
-                                                           directoryInstances[instance][basedn][supplier]['port'])
+                        consumer_uri = "{}://{}:{}".format(directoryInstances[instance]['suffixes'][basedn][supplier]['protocol'], consumer_host,
+                                                           directoryInstances[instance]['suffixes'][basedn][supplier]['port'])
                         try:
                             connC = connect(consumer_uri,
-                                    directoryInstances[instance][basedn][supplier]['bind'],
-                                    directoryInstances[instance][basedn][supplier]['pwd'], netTimeout, logger)
+                                    directoryInstances[instance]['suffixes'][basedn][supplier]['bind'],
+                                    directoryInstances[instance]['suffixes'][basedn][supplier]['pwd'], netTimeout, logger)
                             logger.info('instance="{}" baseDN="{}" host={} action=connect status=success'.format(instance, basedn, consumer_host))
                         except ldap.LDAPError as err:
                             logger.error('instance="{}" baseDN="{}" host={} action=connect status=fail {}'
                                       .format(instance, basedn, consumer_host, handle_log(err)))
-                            RESULT[instance][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
                             someError = True
                             logger.fatal('instance="{}" baseDN="{}" consumer={} action=validate status=fail detail="{}"'
                                       .format(instance, basedn, consumer_host, "Can't connect"))
@@ -288,16 +354,16 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                         except ldap.LDAPError as err:
                             logger.error('instance="{}" baseDN="{}" host={} action=search status=fail {}'
                                       .format(instance, basedn, consumer_host, handle_log(err)))
-                            RESULT[instance][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
                             someError = True
                         if nentries == 1:
                             logger.info('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=success'
                                      .format(instance, basedn, supplier, consumer_host))
-                            RESULT[instance][basedn][supplier]['replica'][consumer_host] = True
+                            RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = True
                         else:
                             logger.error('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=fail detail="{} entries found. Expected 1"'
                                      .format(instance, basedn, supplier, consumer_host, nentries))
-                            RESULT[instance][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
                             someError = True
                         # Unbind from consumer
                         try:
@@ -314,24 +380,24 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                     logger.info('instance="{}" baseDN="{}" host={} action=delete status=success'.format(instance, basedn, supplier))
                     logger.info('instance="{}" baseDN="{}" supplier={} action=validate status=success'
                              .format(instance, basedn, supplier))
-                    RESULT[instance][basedn][supplier]['status'] = True
+                    RESULT[instance]['suffixes'][basedn][supplier]['status'] = True
                 except ldap.LDAPError as err:
                     logger.error('instance="{}" baseDN="{}" host={} action=delete status=fail {}'
                               .format(instance, basedn, supplier, handle_log(err)))
-                    RESULT[instance][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
                     someError = True
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't delete"))
                 except ldap.NO_SUCH_OBJECT:
                     logger.error('instance="{}" baseDN="{}" host={} action=delete status=fail error="No such object"'
                               .format(instance, basedn, supplier))
-                    RESULT[instance][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
                     someError = True
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't delete. Deleted already? Unexpected."))
 
                 # If the replica isn't always in synch, try to send update now
-                for consumer in directoryInstances[instance][basedn][supplier]['replica']:
+                for consumer in directoryInstances[instance]['suffixes'][basedn][supplier]['replica']:
                     for consumer_host, consumer_repl in consumer.items():
                         # "send update now" for non-always in synch replica
                         try:
