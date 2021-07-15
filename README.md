@@ -91,6 +91,12 @@ TimeoutStartSec=1200
 You can modify the timeout in order to complete your checks.
 Don't forget `systemctl daemon-reload`.
 
+## Side effect on non-always in synch replica
+If you check periodically a non-always in synch replica, you risk to change the scheduled time of your replica!
+In order to perform the check, ds-repltest forces an update before to decide the replication status. The update contains all data waiting for synchronization.
+
+If the period of ds-repltest check is much shorter than the scheduled update interval, you risk really to change the real update time interval.
+
 ## OPTIONAL ARGUMENTS
 ### --once
 Alternatively to systemd, the check could run once by command line and then exit. Run the command in this way:
@@ -120,5 +126,7 @@ A key `suffixes` must be prepended to your conf before the supplier list. For in
           bind: cn=directory manager
           pwd: password
 ```
+
+A key `balancerd` may be added to perform an LDAP check over a balanced IP.
 
 See at the default config for more details.
