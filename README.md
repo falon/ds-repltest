@@ -127,6 +127,6 @@ A key `suffixes` must be prepended to your conf before the supplier list. For in
           pwd: password
 ```
 
-A key `balancerd` may be added to perform an LDAP check over a balanced IP.
+A key `balancer` may be added to perform an LDAP check over a balanced IP.
 
 See at the default config for more details.
