@@ -2,14 +2,13 @@
 Description=DS ReplTest Service
 Wants=nss-lookup.target network.target network-online.target remote-fs.target time-sync.target
 After=var-run.mount nss-lookup.target network.target network-online.target remote-fs.target time-sync.target
-#OnFailure=status-email-sysadmin@%n.service
 
 [Service]
 Type=notify
 User=dsrepl
 Group=dsrepl
 MemoryAccounting=true
-MemoryLimit=10M
+MemoryLimit=20M
 KillMode=mixed
 TimeoutStopSec=10s
 ExecStart=/usr/bin/python3 /usr/bin/ds-repltest.py

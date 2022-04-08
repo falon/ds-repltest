@@ -165,10 +165,15 @@ def time_to_notify(directoryInstances,netTimeout, sleepTime, UPDATE_sleepTime):
                             waiting += UPDATE_sleepTime*2
     return waiting
 
-def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_sleepTime, logger):
+def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_sleepTime, logger, logout):
     someError = False
     ''' Initialize the RESULT Dictionary '''
     RESULT = {}
+    if not logout:
+        mapResult = { True: "\t[  \033[92mOK\033[0m  ]", False: "\t[  \033[91mKO\033[0m  ]" }
+        endStr = ''
+    else:
+        endStr = "\n"
 
     for instance in directoryInstances:
         RESULT[instance] = {}
@@ -180,7 +185,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
             balancer_uri = "{}://{}:{}".format(directoryInstances[instance]['balancer']['protocol'],
                                                directoryInstances[instance]['balancer']['host'],
                                                directoryInstances[instance]['balancer']['port'])
-            print("\t\tChecking balancer access on {}".format(balancer_uri))
+            print("\t\tChecking balancer access on {}".format(balancer_uri), end=endStr)
             try:
                 connB = connect(balancer_uri,
                                 directoryInstances[instance]['balancer']['bind'],
@@ -237,6 +242,8 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                                 .format(instance, directoryInstances[instance]['balancer']['basedn'],
                                         directoryInstances[instance]['balancer']['host']))
                     someError = True
+            if not logout:
+                print(mapResult[RESULT[instance]['status']])
 
         # Perform the replication checks
         for basedn in directoryInstances[instance]['suffixes']:
@@ -246,8 +253,9 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
             for supplier in directoryInstances[instance]['suffixes'][basedn]:
                 RESULT[instance]['suffixes'][basedn][supplier] = {}
                 RESULT[instance]['suffixes'][basedn][supplier]['replica'] = {}
+                RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = True
                 # Connect to the Supplier
-                print("\t\tWorking on supplier {}".format(supplier))
+                print("\t\tWorking on supplier {}".format(supplier), end=endStr)
                 supplier_uri = "{}://{}:{}".format(directoryInstances[instance]['suffixes'][basedn][supplier]['protocol'], supplier,
                                                    directoryInstances[instance]['suffixes'][basedn][supplier]['port'])
                 try:
@@ -259,6 +267,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                     logger.error('instance="{}" baseDN="{}" host={} action=connect status=fail {}'
                               .format(instance, basedn, supplier, handle_log(err)))
                     RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                     someError = True
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't connect"))
@@ -278,6 +287,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                 except ldap.LDAPError as err:
                     nentries = 0
                     someError = True
+                    RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                     logger.error('instance="{}" baseDN="{}" host={} action="garbage search" status=fail {}'
                               .format(instance, basedn, supplier, handle_log(err)))
 
@@ -307,6 +317,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't add to the supplier"))
                     RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                     someError= True
 
                 # Wait to allow replica propagation among consumers
@@ -319,6 +330,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                             send_update_now(connS, consumer_repl, UPDATE_sleepTime, instance, basedn, supplier, consumer_host, logger)
                         except sunError as err:
                             RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                             someError= True
                             logger.fatal('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=fail {}'
                                     .format(instance, basedn, supplier, consumer_host, handle_log(err)))
@@ -336,6 +348,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                             logger.error('instance="{}" baseDN="{}" host={} action=connect status=fail {}'
                                       .format(instance, basedn, consumer_host, handle_log(err)))
                             RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                             someError = True
                             logger.fatal('instance="{}" baseDN="{}" consumer={} action=validate status=fail detail="{}"'
                                       .format(instance, basedn, consumer_host, "Can't connect"))
@@ -355,6 +368,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                             logger.error('instance="{}" baseDN="{}" host={} action=search status=fail {}'
                                       .format(instance, basedn, consumer_host, handle_log(err)))
                             RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                             someError = True
                         if nentries == 1:
                             logger.info('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=success'
@@ -364,6 +378,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                             logger.error('instance="{}" baseDN="{}" supplier={} consumer={} action=validate status=fail detail="{} entries found. Expected 1"'
                                      .format(instance, basedn, supplier, consumer_host, nentries))
                             RESULT[instance]['suffixes'][basedn][supplier]['replica'][consumer_host] = False
+                            RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                             someError = True
                         # Unbind from consumer
                         try:
@@ -371,6 +386,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                             logger.info('instance="{}" baseDN="{}" host={} action=disconnect status=success'.format(instance, basedn, consumer_host))
                         except:
                             logger.error('instance="{}" baseDN="{}" host={} action=disconnect status=fail'.format(instance, basedn, consumer_host))
+                            RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                             someError = True
 
 
@@ -385,6 +401,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                     logger.error('instance="{}" baseDN="{}" host={} action=delete status=fail {}'
                               .format(instance, basedn, supplier, handle_log(err)))
                     RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                     someError = True
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't delete"))
@@ -392,6 +409,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                     logger.error('instance="{}" baseDN="{}" host={} action=delete status=fail error="No such object"'
                               .format(instance, basedn, supplier))
                     RESULT[instance]['suffixes'][basedn][supplier]['status'] = False
+                    RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                     someError = True
                     logger.fatal('instance="{}" baseDN="{}" supplier={} action=validate status=fail detail="{}"'
                               .format(instance, basedn, supplier, "Can't delete. Deleted already? Unexpected."))
@@ -403,6 +421,7 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                         try:
                             send_update_now(connS, consumer_repl, UPDATE_sleepTime, instance, basedn, supplier, consumer_host, logger)
                         except sunError as err:
+                            RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                             someError= True
 
                 # Unbind from Supplier
@@ -411,7 +430,11 @@ def replTest(directoryInstances, rDN, testEntry, netTimeout, sleepTime, UPDATE_s
                     logger.info('instance="{}" baseDN="{}" host={} action=disconnect status=success'.format(instance, basedn, supplier))
                 except:
                     logger.error('instance="{}" baseDN="{}" host={} action=disconnect status=fail'.format(instance, basedn, supplier))
+                    RESULT[instance]['suffixes'][basedn][supplier]['overallStatus'] = False
                     someError = True
+
+                if not logout:
+                    print(mapResult[RESULT[instance]['suffixes'][basedn][supplier]['overallStatus']])
                 time.sleep(sleepTime)
 
     return RESULT, someError

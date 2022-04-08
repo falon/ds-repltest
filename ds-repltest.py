@@ -123,7 +123,7 @@ for key, value in ENTRY.items():
 
 ''' MAIN procedure '''
 if runOnce:
-    (RESULT, testError) = myldap.replTest(LDAP_INSTANCES, rdn, ENTRY, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME, log)
+    (RESULT, testError) = myldap.replTest(LDAP_INSTANCES, rdn, ENTRY, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME, log, LOGSTDOUT)
     if testError:
         print ("FAIL. Some errors occur. Check at the log for more details.")
         if email_parameters['SEND']:
@@ -143,7 +143,7 @@ if systemd.daemon.booted():
     systemd.daemon.notify('STATUS=Please wait. Check on progress...')
     log.debug('Systemd will wait up to {}s for end of checks.'.format(extend_time/1000000))
 
-(RESULT, testError) = myldap.replTest(LDAP_INSTANCES, rdn, ENTRY, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME, log)
+(RESULT, testError) = myldap.replTest(LDAP_INSTANCES, rdn, ENTRY, NET_TIMEOUT, SLEEPTIME, UPDATE_SLEEPTIME, log, LOGSTDOUT)
 current_time = datetime.now()
 
 if testError:

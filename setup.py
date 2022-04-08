@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='ds-repltest',
-    version='1.5',
+    version='1.6',
     description='LDAP Replication Check for 389ds',
     long_description=long_description,
     long_description_content_type="text/markdown",

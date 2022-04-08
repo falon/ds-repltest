@@ -169,6 +169,9 @@ rm -rf $RPM_BUILD_ROOT
 {% endif %}
 %changelog
 * {{ data.changelog_date_packager }} - {{ data.version }}-1
+- Version 1.6
+- improved output when LOGSTDOUT: false.
+* Mon Jul 05 2021 Marco F <m.faverof@gmail.com> - 1.5-1
 - Version 1.5
 - Added balancer section to test LDAP availability
   on a host per instance.
