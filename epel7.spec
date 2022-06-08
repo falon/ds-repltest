@@ -8,7 +8,7 @@
 
 Name:           {{ data.pkg_name|macroed_pkg_name(data.srcname) }}
 Version:        {{ data.version }}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Vendor:		Falon Entertainment
 Packager:	Marco Favero <marco.favero@csi.it>
 Summary:        {{ data.summary }}
@@ -168,7 +168,10 @@ rm -rf $RPM_BUILD_ROOT
 {%- endif %}
 {% endif %}
 %changelog
-* {{ data.changelog_date_packager }} - {{ data.version }}-1
+* {{ data.changelog_date_packager }} - {{ data.version }}-2
+- Version 1.6.2
+- increased MemoryLimit to 30MB.
+* Fri Apr 08 2022 Marco F <m.faverof@gmail.com> - 1.6-1
 - Version 1.6
 - improved output when LOGSTDOUT: false.
 * Mon Jul 05 2021 Marco F <m.faverof@gmail.com> - 1.5-1
